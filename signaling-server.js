@@ -3,8 +3,7 @@ const http = require('http');
 
 // Create HTTP server
 const server = http.createServer();
-const wss = new WebSocket.Server({ server });
-
+let wss = new WebSocket.Server({ server }); // Initialize WebSocket server
 // Store active rooms and their participants
 const rooms = new Map();
 
@@ -117,7 +116,7 @@ function handleLeave(ws, roomId, userId) {
   const room = rooms.get(roomId);
   if (room) {
     room.delete(userId);
-    
+
     // Notify remaining participants
     room.forEach((participantWs, participantId) => {
       participantWs.send(JSON.stringify({
@@ -146,6 +145,13 @@ function handleGetParticipants(ws, roomId, userId) {
 }
 
 const PORT = process.env.PORT || 8081;
-server.listen(PORT, () => {
-  console.log(`Signaling server running on port ${PORT}`);
-}); 
+
+// Export the server as a Vercel function
+module.exports = (req, res) => {
+  if (req.method === 'GET') {
+    res.writeHead(200, { 'Content-Type': 'text/plain' });
+    res.end('WebSocket server is running');
+  } else {
+    server.emit('request', req, res); // Handle WebSocket connections
+  }
+}; 
